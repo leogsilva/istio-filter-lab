@@ -9,8 +9,16 @@ install-istio-%: create-% env-%
 	$(ISTIOCTL) operator init 
 	$(KUBECTL) apply -f default-profile.yaml
 
+install-nginx-%: env-%
+	$(KUBECTL) create ns ingress-nginx || true
+	$(KUBECTL) label namespace ingress-nginx istio-injection=enabled || true
+	$(KUBECTL) apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.1/deploy/static/provider/cloud/deploy.yaml
+	$(KUBECTL) wait --for=condition=Available deployment/ingress-nginx-controller -n ingress-nginx --timeout=160s
+
 install-httpbin-%: install-istio-% env-%
-	$(KUBECTL) label namespace default istio-injection=enabled
+	$(KUBECTL) patch svc ingress-nginx-controller -n ingress-nginx --patch "$$(cat patches/patch_ingresscontroller.yaml)"
+	$(KUBECTL) patch svc istio-ingressgateway -n istio-system --patch "$$(cat patches/patch_ingressgateway.yaml)"
+	$(KUBECTL) label namespace default istio-injection=enabled || true
 	$(KUBECTL) apply -f httpbin.yaml
 	$(KUBECTL) apply -f lua_filter.yaml
 

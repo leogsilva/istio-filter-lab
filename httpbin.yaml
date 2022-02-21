@@ -89,11 +89,31 @@ spec:
     - uri:
         prefix: /mycontext/
     rewrite:
-      authority: legacy.fakeagain.io
+      authority: legacy.myfake.io
       uri: /
     route:
     - destination:
-        host: httpbin
+        host: ingress-nginx-controller.ingress-nginx
         port:
-          number: 8000
+          number: 80
       weight: 100
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: httpbin-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: noauth.myfake.io
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: httpbin
+            port:
+              number: 8000

@@ -1,11 +1,12 @@
 apiVersion: networking.istio.io/v1alpha3
 kind: EnvoyFilter
 metadata:
-  name: httpbin-lua-extension
+  name: nginx-lua-extension
+  namespace: ingress-nginx
 spec:
   workloadSelector:
     labels:
-      app: httpbin
+      app.kubernetes.io/component: controller
   configPatches:
   - applyTo: HTTP_FILTER
     match:
@@ -229,24 +230,22 @@ spec:
 
             function envoy_on_request(request_handle)
               local authorization = get_header(request_handle, "Authorization")
-              local host = get_header(request_handler,"Host")
-              if host and host == "legacy.fakeit.io" then
+              local host = get_header(request_handle,"Host")
+              if host and host == "legacy.myfake.io" then
                 if authorization then
                   _, _, token = string.find(authorization, "Bearer%s+(.+)")
 
                   local jwt = decode_jwt(token)
                   
                   if is_sts_jwt(jwt.claims) then
-                    request_handle:headers():add("authority","johndoe.com")
+                    request_handle:headers():add("authority","validtoken.myfake.io")
                   else
-                    request_handle:headers():add("authority","seila.com")
+                    request_handle:headers():add("authority","invalidtoken.myfake.io")
                   end
                 else 
-                    request_handle:headers():add("authority","zemaria.com")
+                    request_handle:headers():add("authority","noauth.myfake.io")
                 end
               end
               -- just do nothing
             end          
-            function envoy_on_response(response_handle)
-              response_handle:headers():add("istioinaction", "it works!")
-            end
+
