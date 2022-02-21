@@ -229,20 +229,23 @@ spec:
 
             function envoy_on_request(request_handle)
               local authorization = get_header(request_handle, "Authorization")
-              if authorization then
-                _, _, token = string.find(authorization, "Bearer%s+(.+)")
+              local host = get_header(request_handler,"Host")
+              if host and host == "legacy.fakeit.io" then
+                if authorization then
+                  _, _, token = string.find(authorization, "Bearer%s+(.+)")
 
-                local jwt = decode_jwt(token)
-                
-                if is_sts_jwt(jwt.claims) then
-                  request_handle:headers():add("authority","johndoe.com")
-                else
-                  request_handle:headers():add("authority","seila.com")
+                  local jwt = decode_jwt(token)
+                  
+                  if is_sts_jwt(jwt.claims) then
+                    request_handle:headers():add("authority","johndoe.com")
+                  else
+                    request_handle:headers():add("authority","seila.com")
+                  end
+                else 
+                    request_handle:headers():add("authority","zemaria.com")
                 end
-              else 
-                  request_handle:headers():add("authority","zemaria.com")
               end
-
+              -- just do nothing
             end          
             function envoy_on_response(response_handle)
               response_handle:headers():add("istioinaction", "it works!")
