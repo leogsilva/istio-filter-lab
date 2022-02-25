@@ -62,7 +62,10 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: httpbin-gateway
+  labels:
+    app: kong-proxy
+  name: kong-gateway
+  namespace: ingress-nginx
 spec:
   selector:
     istio: ingressgateway
@@ -77,12 +80,15 @@ spec:
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
-  name: httpbin
+  labels:
+    app: kong-proxy
+  name: kong-virtualservice
+  namespace: ingress-nginx
 spec:
   hosts:
   - "*"
   gateways:
-  - httpbin-gateway
+  - kong-gateway
   http:
   - name: legacy
     match:
@@ -93,10 +99,28 @@ spec:
       uri: /
     route:
     - destination:
-        host: ingress-nginx-controller.ingress-nginx
+        host: ingress-nginx-controller
         port:
           number: 80
+        subset: stable
       weight: 100
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  labels:
+    app: kong-proxy
+  name: kong-proxy-destination-rules-mtls
+  namespace: ingress-nginx
+spec:
+  host: kong-proxy
+  subsets:
+  - name: stable   
+    labels:        
+      app: ingress-kong
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
