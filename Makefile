@@ -25,6 +25,7 @@ install-httpbin-%: install-istio-%
 test-%:
 	$(eval POD := $(shell $(KUBECTL) get pods -n istio-system -lapp=istio-ingressgateway -o=name))	
 	$(KUBECTL) exec -ti $(POD) -n istio-system -- curl -v http://istio-ingressgateway/mycontext/get
+	$(KUBECTL) exec -ti $(POD) -n istio-system -- curl -v -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJJc3N1ZXIiOiJJc3N1ZXIiLCJ1c3IiOiJKYXZhSW5Vc2UiLCJleHAiOjE2NzczMzI3ODIsImJyYW5jaCI6ImIxIiwiaWF0IjoxNjQ1Nzk2NzgyfQ.I3y5OuHxvW2VI46HCnfXENqvUhfAu11YyTKFUNvaXU8" http://istio-ingressgateway/mycontext/get 
 
 delete-%:
 	@kind delete cluster --name $(NAME)
